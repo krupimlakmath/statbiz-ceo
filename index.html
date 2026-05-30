@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StatBiz CEO (สถิติพิชิตธุรกิจ)</title>
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- React & ReactDOM CDN -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel CDN (For JSX compilation in browser) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gradient-to-br from-indigo-900 via-blue-800 to-sky-900 min-h-screen">
@@ -756,7 +760,7 @@
         function Mission15({ onSuccess, onError }) {
             return (
                 <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 15: สรุปสารสนเทศเพื่อโฆษณา" desc="ภารกิจสุดท้าย! ลูกค้า 80% โหวตให้ 'ซุปทรัฟเฟิล' เป็นเมนูโปรดอันดับ 1 เลือกสโลแกนโฆษณาใดที่ดึงดูดและซื่อสัตย์ต่อข้อมูลที่สุด?" />
+                    <MissionHeader title="ภารกิจที่ 15: สรุปสารสนเทศเพื่อโฆษณา" desc="ภารกิจสุดท้าย! ลูกค้า 80% โหวตให้ 'ซุปทรัฟเฟิล' เป็นเมนูโปรดอันดับ 1 คุณจะเลือกสโลแกนโฆษณาใดที่ดึงดูดและซื่อสัตย์ต่อข้อมูลที่สุด?" />
                     <div class="space-y-3">
                         <ChoiceButton onClick={onSuccess} text="🎉 'ซุปทรัฟเฟิล เมนูยอดฮิตที่ลูกค้ากว่า 80% หลงรัก!'" />
                         <ChoiceButton onClick={onError} text="❌ 'ซุปทรัฟเฟิลที่อร่อยที่สุดในโลก ทุกคนที่ชิมต้องร้องว้าว!'" />
@@ -767,7 +771,7 @@
         }
 
         // Render to DOM
-        const root = tragedies = ReactDOM.createRoot(document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
 </body>
