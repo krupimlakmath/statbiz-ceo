@@ -4,33 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StatBiz CEO (สถิติพิชิตธุรกิจ)</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- React & ReactDOM CDN -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-    <!-- Babel CDN (For JSX compilation in browser) -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; margin: 0; padding: 0; }
+        .swal-backdrop { animation: fadeIn 0.3s ease; }
+        .swal-popup { animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    </style>
 </head>
 <body class="bg-gradient-to-br from-indigo-900 via-blue-800 to-sky-900 min-h-screen">
 
     <div id="root"></div>
 
-    <script type="text/babel">
-        // Lucide Icons Wrapper for browser CDN
-        const Play = () => <i data-lucide="play" class="w-6 h-6 inline"></i>;
-        const CheckCircle = () => <i data-lucide="check-circle" class="w-6 h-6 inline"></i>;
-        const AlertCircle = () => <i data-lucide="alert-circle" class="w-10 h-10 inline"></i>;
-        const ArrowRight = () => <i data-lucide="arrow-right" class="w-5 h-5 inline"></i>;
-        const Star = () => <i data-lucide="star" class="w-5 h-5 text-yellow-400 fill-yellow-400 inline"></i>;
-        const Award = () => <i data-lucide="award" class="w-6 h-6 inline"></i>;
-        const Briefcase = () => <i data-lucide="briefcase" class="w-12 h-12 inline"></i>;
-        const ChevronRight = () => <i data-lucide="chevron-right" class="w-5 h-5 inline"></i>;
-        const Check = () => <i data-lucide="check" class="w-10 h-10 inline"></i>;
-        const Users = () => <i data-lucide="users" class="w-5 h-5 inline"></i>;
-        const TrendingUp = () => <i data-lucide="trending-up" class="w-5 h-5 inline"></i>;
+    <script>
+        // สร้าง Alias ย่อส่วนเพื่อให้อ่านง่ายขึ้น (แทนที่ JSX)
+        const e = React.createElement;
+
+        // ฟังก์ชันช่วยสร้างไอคอน Lucide
+        const createIcon = (name, className = "w-5 h-5 inline") => {
+            return e('i', { 'data-lucide': name, class: className });
+        };
 
         const THEME = {
             bg: 'bg-gradient-to-br from-indigo-900 via-blue-800 to-sky-900',
@@ -65,20 +63,6 @@
             const [alert, setAlert] = React.useState(null);
 
             React.useEffect(() => {
-                const style = document.createElement('style');
-                style.innerHTML = `
-                    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-                    body { font-family: 'Sarabun', sans-serif; }
-                    .swal-backdrop { animation: fadeIn 0.3s ease; }
-                    .swal-popup { animation: scaleIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-                    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                    @keyframes scaleIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-                `;
-                document.head.appendChild(style);
-                lucide.createIcons();
-            }, []);
-
-            React.useEffect(() => {
                 lucide.createIcons();
             }, [viewState, currentMission, alert, isLoading]);
 
@@ -89,10 +73,8 @@
                 setTimeout(() => {
                     setIsLoading(false);
                     callback();
-                }, 1200);
+                }, 1000);
             };
-
-            const startGame = () => showLoading(() => setViewState('phase_intro'));
 
             const handleCorrect = () => {
                 setAlert({
@@ -132,78 +114,70 @@
                 });
             };
 
-            const resetGame = () => {
-                showLoading(() => {
-                    setViewState('intro');
-                    setCurrentMission(1);
-                    setScore(100);
-                    setPlayerInfo({ name: '', classStr: '', number: '' });
-                });
-            };
+            // ส่วน Render วิวต่างๆ ด้วย React.createElement
+            let mainContent = null;
+            if (viewState === 'intro') {
+                mainContent = e(IntroScreen, { onStart: () => showLoading(() => setViewState('phase_intro')), playerInfo, setPlayerInfo, onWarning: handleWarning });
+            } else if (viewState === 'phase_intro') {
+                mainContent = e(PhaseIntroScreen, { phase: currentPhase, onStart: () => showLoading(() => setViewState('playing')) });
+            } else if (viewState === 'playing') {
+                let missionComponent = null;
+                if (currentMission === 1) missionComponent = e(Mission1, { onSuccess: handleCorrect });
+                else if (currentMission === 2) missionComponent = e(Mission2, { onSuccess: handleCorrect, onError: handleError, onWarning: handleWarning });
+                else if (currentMission === 3) missionComponent = e(Mission3, { onSuccess: handleCorrect, onError: handleError, onWarning: handleWarning });
+                else if (currentMission === 4) missionComponent = e(Mission4, { onSuccess: handleCorrect, onError: handleError, onWarning: handleWarning });
+                else if (currentMission === 5) missionComponent = e(Mission5, { onSuccess: handleCorrect, onError: handleError });
+                else if (currentMission === 6) missionComponent = e(Mission6, { onSuccess: handleCorrect, onError: handleError, onWarning: handleWarning });
+                else if (currentMission === 7) missionComponent = e(Mission7, { onSuccess: handleCorrect, onError: handleError, onWarning: handleWarning });
+                else if (currentMission === 8) missionComponent = e(Mission8, { onSuccess: handleCorrect, onError: handleError });
+                else if (currentMission === 9) missionComponent = e(Mission9, { onSuccess: handleCorrect, onError: handleError });
+                else if (currentMission === 10) missionComponent = e(Mission10, { onSuccess: handleCorrect, onError: handleError });
+                else if (currentMission === 11) missionComponent = e(Mission11, { onSuccess: handleCorrect, onError: handleError, onWarning: handleWarning });
+                else if (currentMission === 12) missionComponent = e(Mission12, { onSuccess: handleCorrect, onError: handleError });
+                else if (currentMission === 13) missionComponent = e(Mission13, { onSuccess: handleCorrect, onError: handleError });
+                else if (currentMission === 14) missionComponent = e(Mission14, { onSuccess: handleCorrect, onError: handleError });
+                else if (currentMission === 15) missionComponent = e(Mission15, { onSuccess: handleCorrect, onError: handleError });
 
-            return (
-                <div class="font-sarabun text-slate-800 flex flex-col relative min-h-screen">
-                    <div class="flex-grow flex items-center justify-center p-3 md:p-8 z-10 pb-20">
-                        <div class="max-w-4xl w-full">
-                            {viewState === 'intro' && <IntroScreen onStart={startGame} playerInfo={playerInfo} setPlayerInfo={setPlayerInfo} onWarning={handleWarning} />}
-                            {viewState === 'phase_intro' && <PhaseIntroScreen phase={currentPhase} onStart={() => showLoading(() => setViewState('playing'))} />}
-                            {viewState === 'playing' && (
-                                <div class="space-y-4 md:space-y-6">
-                                    <div class="flex justify-between items-center bg-white/95 backdrop-blur rounded-2xl p-3 md:p-4 shadow-lg border-b-4" style={{ borderColor: currentPhase === 1 ? '#f97316' : currentPhase === 2 ? '#d97706' : '#be123c' }}>
-                                        <div class="flex items-center gap-3 md:gap-4">
-                                            <div class={`w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-xl md:text-2xl shadow-inner ${PHASE_INFO[currentPhase].bgLight}`}>
-                                                {PHASE_INFO[currentPhase].icon}
-                                            </div>
-                                            <div>
-                                                <h2 class="text-base md:text-xl font-bold text-slate-800 leading-tight">Phase {currentPhase}: {PHASE_INFO[currentPhase].title}</h2>
-                                                <p class="text-xs md:text-sm text-slate-500 font-medium">ภารกิจที่ {currentMission}/15 • Level: {PHASE_INFO[currentPhase].level}</p>
-                                            </div>
-                                        </div>
-                                        <div class="text-right flex flex-col items-end shrink-0">
-                                            <div class="flex items-center gap-1 bg-slate-50 px-2 py-1 md:px-3 md:py-1 rounded-full border border-slate-200">
-                                                <Star />
-                                                <span class="text-lg md:text-xl font-bold text-indigo-700">{score}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class={THEME.card}>
-                                        {currentMission === 1 && <Mission1 onSuccess={handleCorrect} />}
-                                        {currentMission === 2 && <Mission2 onSuccess={handleCorrect} onError={handleError} onWarning={handleWarning} />}
-                                        {currentMission === 3 && <Mission3 onSuccess={handleCorrect} onError={handleError} onWarning={handleWarning} />}
-                                        {currentMission === 4 && <Mission4 onSuccess={handleCorrect} onError={handleError} onWarning={handleWarning} />}
-                                        {currentMission === 5 && <Mission5 onSuccess={handleCorrect} onError={handleError} />}
-                                        {currentMission === 6 && <Mission6 onSuccess={handleCorrect} onError={handleError} onWarning={handleWarning} />}
-                                        {currentMission === 7 && <Mission7 onSuccess={handleCorrect} onError={handleError} onWarning={handleWarning} />}
-                                        {currentMission === 8 && <Mission8 onSuccess={handleCorrect} onError={handleError} />}
-                                        {currentMission === 9 && <Mission9 onSuccess={handleCorrect} onError={handleError} />}
-                                        {currentMission === 10 && <Mission10 onSuccess={handleCorrect} onError={handleError} />}
-                                        {currentMission === 11 && <Mission11 onSuccess={handleCorrect} onError={handleError} onWarning={handleWarning} />}
-                                        {currentMission === 12 && <Mission12 onSuccess={handleCorrect} onError={handleError} />}
-                                        {currentMission === 13 && <Mission13 onSuccess={handleCorrect} onError={handleError} />}
-                                        {currentMission === 14 && <Mission14 onSuccess={handleCorrect} onError={handleError} />}
-                                        {currentMission === 15 && <Mission15 onSuccess={handleCorrect} onError={handleError} />}
-                                    </div>
-                                </div>
-                            )}
-                            {viewState === 'ending' && <EndingScreen score={score} playerInfo={playerInfo} onRestart={resetGame} />}
-                        </div>
-                    </div>
-                    <footer class="w-full py-4 text-center text-white/70 text-xs md:text-sm absolute bottom-0 font-medium z-0">
-                        © 2026 Copyright | พัฒนาโดย คุณครูพิมพ์ลักษณ์ เจริญวานิชกูร
-                    </footer>
-                    {isLoading && <LoadingOverlay />}
-                    {alert && <SweetAlert {...alert} />}
-                </div>
+                mainContent = e('div', { class: 'space-y-4 md:space-y-6' },
+                    e('div', { 
+                        class: 'flex justify-between items-center bg-white/95 backdrop-blur rounded-2xl p-3 md:p-4 shadow-lg border-b-4', 
+                        style: { borderColor: currentPhase === 1 ? '#f97316' : currentPhase === 2 ? '#d97706' : '#be123c' }
+                    },
+                        e('div', { class: 'flex items-center gap-3 md:gap-4' },
+                            e('div', { class: `w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-xl md:text-2xl shadow-inner ${PHASE_INFO[currentPhase].bgLight}` }, PHASE_INFO[currentPhase].icon),
+                            e('div', null,
+                                e('h2', { class: 'text-base md:text-xl font-bold text-slate-800 leading-tight' }, `Phase ${currentPhase}: ${PHASE_INFO[currentPhase].title}`),
+                                e('p', { class: 'text-xs md:text-sm text-slate-500 font-medium' }, `ภารกิจที่ ${currentMission}/15 • Level: ${PHASE_INFO[currentPhase].level}`)
+                            )
+                        ),
+                        e('div', { class: 'text-right flex flex-col items-end shrink-0' },
+                            e('div', { class: 'flex items-center gap-1 bg-slate-50 px-2 py-1 md:px-3 md:py-1 rounded-full border border-slate-200' },
+                                createIcon('star', 'w-5 h-5 text-yellow-400 fill-yellow-400 inline'),
+                                e('span', { class: 'text-lg md:text-xl font-bold text-indigo-700' }, score)
+                            )
+                        )
+                    ),
+                    e('div', { class: THEME.card }, missionComponent)
+                );
+            } else if (viewState === 'ending') {
+                mainContent = e(EndingScreen, { score, playerInfo, onRestart: () => showLoading(() => { setViewState('intro'); setCurrentMission(1); setScore(100); setPlayerInfo({ name: '', classStr: '', number: '' }); }) });
+            }
+
+            return e('div', { class: 'text-slate-800 flex flex-col relative min-h-screen' },
+                e('div', { class: 'flex-grow flex items-center justify-center p-3 md:p-8 z-10 pb-20' },
+                    e('div', { class: 'max-w-4xl w-full' }, mainContent)
+                ),
+                e('footer', { class: 'w-full py-4 text-center text-white/70 text-xs md:text-sm absolute bottom-0 font-medium z-0' }, '© 2026 Copyright | พัฒนาโดย คุณครูพิมพ์ลักษณ์ เจริญวานิชกูร'),
+                isLoading && e(LoadingOverlay),
+                alert && e(SweetAlert, alert)
             );
         }
 
-        // --- SUB COMPONENTS ---
+        // --- ส่วนประกอบย่อย (SUB COMPONENTS)แปลงเป็น React.createElement ---
         function LoadingOverlay() {
-            return (
-                <div class="fixed inset-0 bg-indigo-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center swal-backdrop">
-                    <div class="w-16 h-16 md:w-20 md:h-20 border-4 border-indigo-200 border-t-white rounded-full animate-spin mb-4"></div>
-                    <h3 class="text-white text-lg md:text-xl font-bold tracking-widest animate-pulse">กำลังประมวลผล...</h3>
-                </div>
+            return e('div', { class: 'fixed inset-0 bg-indigo-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center swal-backdrop' },
+                e('div', { class: 'w-16 h-16 md:w-20 md:h-20 border-4 border-indigo-200 border-t-white rounded-full animate-spin mb-4' }),
+                e('h3', { class: 'text-white text-lg md:text-xl font-bold tracking-widest animate-pulse' }, 'กำลังประมวลผล...')
             );
         }
 
@@ -215,74 +189,66 @@
             let iconName = isSuccess ? 'check' : 'alert-circle';
             if (isSuccess) { iconBg = 'bg-emerald-100 text-emerald-500'; btnBg = 'bg-emerald-500 hover:bg-emerald-600'; }
             else if (isWarning) { iconBg = 'bg-amber-100 text-amber-500'; btnBg = 'bg-amber-500 hover:bg-amber-600'; }
-            return (
-                <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 swal-backdrop">
-                    <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-2xl swal-popup flex flex-col items-center">
-                        <div class={`w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center mb-4 shadow-inner ${iconBg}`}>
-                            <i data-lucide={iconName} class="w-8 h-8 md:w-10 md:h-10" stroke-width="3"></i>
-                        </div>
-                        <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-2">{title}</h2>
-                        <p class="text-sm md:text-base text-slate-600 mb-6">{text}</p>
-                        <button onClick={onConfirm} class={`w-full py-3 rounded-xl font-bold text-white shadow-md transition-transform hover:scale-105 ${btnBg}`}>
-                            {isSuccess ? 'ลุยภารกิจต่อไป!' : 'ตกลง'}
-                        </button>
-                    </div>
-                </div>
+
+            return e('div', { class: 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 swal-backdrop' },
+                e('div', { class: 'bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-2xl swal-popup flex flex-col items-center' },
+                    e('div', { class: `w-16 h-16 md:w-20 md:h-20 rounded-full flex items-center justify-center mb-4 shadow-inner ${iconBg}` },
+                        createIcon(iconName, "w-8 h-8 md:w-10 md:h-10")
+                    ),
+                    e('h2', { class: 'text-xl md:text-2xl font-bold text-slate-800 mb-2' }, title),
+                    e('p', { class: 'text-sm md:text-base text-slate-600 mb-6' }, text),
+                    e('button', { onClick: onConfirm, class: `w-full py-3 rounded-xl font-bold text-white shadow-md transition-transform hover:scale-105 ${btnBg}` }, isSuccess ? 'ลุยภารกิจต่อไป!' : 'ตกลง')
+                )
             );
         }
 
         function IntroScreen({ onStart, playerInfo, setPlayerInfo, onWarning }) {
-            return (
-                <div class={`${THEME.card} text-center space-y-6 md:space-y-8 py-10 md:py-14 relative overflow-hidden`}>
-                    <div class="relative z-10">
-                        <div class="flex justify-center mb-4"><div class="bg-indigo-100 p-4 rounded-3xl shadow-inner"><Briefcase /></div></div>
-                        <h1 class="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-sky-500 mb-2">StatBiz CEO</h1>
-                        <h2 class="text-xl md:text-2xl text-slate-500 font-semibold mb-4">สถิติพิชิตธุรกิจ 📊</h2>
-                        <p class="text-slate-600 max-w-lg mx-auto text-sm md:text-lg mb-6">ยินดีต้อนรับท่าน CEO คนใหม่! ภารกิจของคุณคือการบริหารธุรกิจ 3 ระดับ โดยใช้ "ข้อมูลเชิงคุณภาพ" มาวิเคราะห์เพื่อการตัดสินใจ</p>
-                        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 max-w-lg mx-auto mb-8 text-left space-y-4 shadow-sm">
-                            <h3 class="font-bold text-indigo-900 text-base flex items-center gap-2 border-b border-indigo-100 pb-2"><Users /> ข้อมูลผู้บริหาร (CEO)</h3>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-600 mb-1">ชื่อ-นามสกุล</label>
-                                <input type="text" class="w-full border-2 border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="นาย / นางสาว" value={playerInfo.name} onChange={e => setPlayerInfo({...playerInfo, name: e.target.value})} />
-                            </div>
-                            <div class="flex gap-4">
-                                <div class="flex-1">
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">ชั้นเรียน</label>
-                                    <input type="text" class="w-full border-2 border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="เช่น ม.6/1" value={playerInfo.classStr} onChange={e => setPlayerInfo({...playerInfo, classStr: e.target.value})} />
-                                </div>
-                                <div class="w-32">
-                                    <label class="block text-xs font-semibold text-slate-600 mb-1">เลขที่</label>
-                                    <input type="text" class="w-full border-2 border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none" placeholder="เลขที่" value={playerInfo.number} onChange={e => setPlayerInfo({...playerInfo, number: e.target.value})} />
-                                </div>
-                            </div>
-                        </div>
-                        <button onClick={() => { if(!playerInfo.name.trim() || !playerInfo.classStr.trim() || !playerInfo.number.trim()) { onWarning('กรุณากรอกข้อมูลให้ครบถ้วนก่อนเข้าเล่นครับ'); return; } onStart(); }} class={`${THEME.primary} px-8 py-3 rounded-full font-bold text-lg md:text-xl flex items-center justify-center gap-3 mx-auto transition-transform hover:scale-105 w-full md:w-auto`}>
-                            <Play /> เข้าสู่ระบบบริหารงาน
-                        </button>
-                    </div>
-                </div>
+            return e('div', { class: THEME.card + ' text-center space-y-6 md:space-y-8 py-10 md:py-14 relative overflow-hidden' },
+                e('div', { class: 'relative z-10' },
+                    e('div', { class: 'flex justify-center mb-4' }, e('div', { class: 'bg-indigo-100 p-4 rounded-3xl shadow-inner' }, createIcon('briefcase', 'w-12 h-12'))),
+                    e('h1', { class: 'text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-sky-500 mb-2' }, 'StatBiz CEO'),
+                    e('h2', { class: 'text-xl md:text-2xl text-slate-500 font-semibold mb-4' }, 'สถิติพิชิตธุรกิจ 📊'),
+                    e('p', { class: 'text-slate-600 max-w-lg mx-auto text-sm md:text-lg mb-6' }, 'ยินดีต้อนรับท่าน CEO คนใหม่! ภารกิจของคุณคือการบริหารธุรกิจ 3 ระดับ โดยใช้ "ข้อมูลเชิงคุณภาพ" มาวิเคราะห์เพื่อการตัดสินใจ'),
+                    e('div', { class: 'bg-slate-50 p-5 rounded-2xl border border-slate-200 max-w-lg mx-auto mb-8 text-left space-y-4 shadow-sm' },
+                        e('h3', { class: 'font-bold text-indigo-900 text-base flex items-center gap-2 border-b border-indigo-100 pb-2' }, createIcon('users', 'w-5 h-5'), ' ข้อมูลผู้บริหาร (CEO)'),
+                        e('div', null,
+                            e('label', { class: 'block text-xs font-semibold text-slate-600 mb-1' }, 'ชื่อ-นามสกุล'),
+                            e('input', { type: 'text', class: 'w-full border-2 border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none', placeholder: 'นาย / นางสาว', value: playerInfo.name, onChange: e => setPlayerInfo({...playerInfo, name: e.target.value}) })
+                        ),
+                        e('div', { class: 'flex gap-4' },
+                            e('div', { class: 'flex-1' },
+                                e('label', { class: 'block text-xs font-semibold text-slate-600 mb-1' }, 'ชั้นเรียน'),
+                                e('input', { type: 'text', class: 'w-full border-2 border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none', placeholder: 'เช่น ม.6/1', value: playerInfo.classStr, onChange: e => setPlayerInfo({...playerInfo, classStr: e.target.value}) })
+                            ),
+                            e('div', { class: 'w-32' },
+                                e('label', { class: 'block text-xs font-semibold text-slate-600 mb-1' }, 'เลขที่'),
+                                e('input', { type: 'text', class: 'w-full border-2 border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-indigo-500 outline-none', placeholder: 'เลขที่', value: playerInfo.number, onChange: e => setPlayerInfo({...playerInfo, number: e.target.value}) })
+                            )
+                        )
+                    ),
+                    e('button', { 
+                        onClick: () => { if(!playerInfo.name.trim() || !playerInfo.classStr.trim() || !playerInfo.number.trim()) { onWarning('กรุณากรอกข้อมูลให้ครบถ้วนก่อนเข้าเล่นครับ'); return; } onStart(); }, 
+                        class: THEME.primary + ' px-8 py-3 rounded-full font-bold text-lg md:text-xl flex items-center justify-center gap-3 mx-auto transition-transform hover:scale-105 w-full md:w-auto' 
+                    }, createIcon('play', 'w-6 h-6'), 'เข้าสู่ระบบบริหารงาน')
+                )
             );
         }
 
         function PhaseIntroScreen({ phase, onStart }) {
             const info = PHASE_INFO[phase];
-            return (
-                <div class={`${THEME.card} text-center space-y-6 py-10 md:py-12 relative overflow-hidden`}>
-                    <div class={`absolute top-0 left-0 w-full h-3 bg-gradient-to-r ${info.color}`}></div>
-                    <div class="text-6xl md:text-7xl animate-bounce mb-2">{info.icon}</div>
-                    <div class="space-y-2">
-                        <h3 class="text-indigo-500 font-bold tracking-widest uppercase text-xs">ยินดีต้อนรับท่าน CEO</h3>
-                        <h1 class="text-2xl md:text-4xl font-black text-slate-800 leading-tight">บริหารธุรกิจ {info.title}</h1>
-                        <div class="inline-block bg-slate-100 px-3 py-1 rounded-full text-slate-600 font-semibold text-xs border border-slate-200 mt-2">Level: {info.level}</div>
-                    </div>
-                    <div class="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 max-w-lg mx-auto shadow-sm">
-                        <h4 class="font-bold text-indigo-800 mb-2 flex items-center justify-center gap-2 text-sm"><Award /> เป้าหมายการเรียนรู้</h4>
-                        <p class="text-slate-700 text-sm md:text-lg">{info.goal}</p>
-                    </div>
-                    <button onClick={onStart} class={`bg-gradient-to-r ${info.color} text-white px-6 py-3 rounded-full font-bold text-base md:text-lg flex items-center justify-center gap-2 mx-auto transition-transform hover:scale-105 shadow-lg w-full md:w-auto`}>
-                        เริ่มบริหารกิจการ <ChevronRight />
-                    </button>
-                </div>
+            return e('div', { class: THEME.card + ' text-center space-y-6 py-10 md:py-12 relative overflow-hidden' },
+                e('div', { class: `absolute top-0 left-0 w-full h-3 bg-gradient-to-r ${info.color}` }),
+                e('div', { class: 'text-6xl md:text-7xl mb-2' }, info.icon),
+                e('div', { class: 'space-y-2' },
+                    e('h3', { class: 'text-indigo-500 font-bold tracking-widest uppercase text-xs' }, 'ยินดีต้อนรับท่าน CEO'),
+                    e('h1', { class: 'text-2xl md:text-4xl font-black text-slate-800 leading-tight' }, `บริหารธุรกิจ ${info.title}`),
+                    e('div', { class: 'inline-block bg-slate-100 px-3 py-1 rounded-full text-slate-600 font-semibold text-xs border border-slate-200 mt-2' }, `Level: ${info.level}`)
+                ),
+                e('div', { class: 'bg-indigo-50/50 border border-indigo-100 rounded-2xl p-4 max-w-lg mx-auto shadow-sm' },
+                    e('h4', { class: 'font-bold text-indigo-800 mb-2 flex items-center justify-center gap-2 text-sm' }, createIcon('award', 'w-6 h-6'), 'เป้าหมายการเรียนรู้'),
+                    e('p', { class: 'text-slate-700 text-sm md:text-lg' }, info.goal)
+                ),
+                e('button', { onClick: onStart, class: `bg-gradient-to-r ${info.color} text-white px-6 py-3 rounded-full font-bold text-base md:text-lg flex items-center justify-center gap-2 mx-auto transition-transform hover:scale-105 shadow-lg w-full md:w-auto` }, 'เริ่มบริหารกิจการ ', createIcon('chevron-right'))
             );
         }
 
@@ -303,51 +269,76 @@
                 }
             };
             const dS = getShopStatus('drink'); const bS = getShopStatus('bakery'); const rS = getShopStatus('resto');
-            return (
-                <div class={`${THEME.card} text-center space-y-6 py-8 relative overflow-hidden`}>
-                    <div class="absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-emerald-400 to-teal-500"></div>
-                    <div class="space-y-2">
-                        <h1 class="text-3xl md:text-5xl font-black text-slate-800">StatBiz CEO</h1>
-                        <h2 class="text-2xl md:text-4xl font-black text-indigo-600">สถิติพิชิตธุรกิจ</h2>
-                        <p class="text-sm md:text-lg text-emerald-700 font-bold bg-emerald-50 border border-emerald-100 inline-block px-4 py-1.5 rounded-full mt-2">สรุปผลการบริหารธุรกิจของ CEO</p>
-                    </div>
-                    <div class="bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 text-indigo-900 px-4 py-3 rounded-2xl inline-flex flex-col md:flex-row items-center gap-2 shadow-sm w-full md:w-auto">
-                        <div class="flex items-center gap-2 font-black text-lg md:text-2xl"><span>{playerInfo.name || 'ผู้บริหาร'}</span></div>
-                        <div class="text-sm font-semibold text-indigo-600 bg-white px-3 py-1 rounded-full shadow-sm">ชั้น {playerInfo.classStr} | เลขที่ {playerInfo.number}</div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                        <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 flex flex-col items-center shadow-sm">
-                            <div class="text-5xl mb-2 drop-shadow-[0_0_15px_rgba(251,146,60,0.6)]">🧋</div>
-                            <h3 class="font-bold text-orange-800">ร้านเครื่องดื่ม</h3>
-                            <div class={`text-xs flex items-center font-bold mt-1 ${dS.color}`}><span class={`w-2.5 h-2.5 rounded-full mr-1 ${dS.dot}`}></span>{dS.text}</div>
-                        </div>
-                        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col items-center shadow-sm">
-                            <div class="text-5xl mb-2 drop-shadow-[0_0_15px_rgba(251,191,36,0.6)]">🥐</div>
-                            <h3 class="font-bold text-amber-800">ร้านเบเกอรี่</h3>
-                            <div class={`text-xs flex items-center font-bold mt-1 ${bS.color}`}><span class={`w-2.5 h-2.5 rounded-full mr-1 ${bS.dot}`}></span>{bS.text}</div>
-                        </div>
-                        <div class="bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col items-center shadow-sm">
-                            <div class="text-5xl mb-2 drop-shadow-[0_0_15px_rgba(244,63,94,0.6)]">🥩</div>
-                            <h3 class="font-bold text-rose-800">ร้านอาหาร</h3>
-                            <div class={`text-xs flex items-center font-bold mt-1 ${rS.color}`}><span class={`w-2.5 h-2.5 rounded-full mr-1 ${rS.dot}`}></span>{rS.text}</div>
-                        </div>
-                    </div>
-                    <div class="bg-slate-50 p-5 rounded-3xl border border-slate-200 flex flex-col items-center">
-                        <h3 class="font-bold text-slate-500 mb-3 tracking-wide uppercase text-xs flex items-center gap-2"><TrendingUp /> กราฟสรุปคะแนนความแม่นยำ</h3>
-                        <div class="w-full max-w-md bg-slate-200 rounded-full h-6 relative overflow-hidden shadow-inner mb-3">
-                            <div class="bg-gradient-to-r from-indigo-500 to-sky-400 h-full flex items-center justify-end px-3 text-white font-black text-sm transition-all duration-1000" style={{ width: `${score}%` }}>{score}%</div>
-                        </div>
-                        <p class="text-base font-bold text-indigo-700">ระดับการบริหาร: {score >= 80 ? 'ผู้บริหารระดับสูง 🌟' : score >= 50 ? 'ผู้จัดการทั่วไป 👍' : 'พนักงานฝึกหัด 💡'}</p>
-                    </div>
-                    <div class="bg-indigo-900 text-white p-6 rounded-3xl max-w-3xl mx-auto shadow-xl text-left relative overflow-hidden">
-                        <h3 class="font-bold text-lg mb-2 flex items-center gap-2 text-indigo-200"><Star /> Key Takeaway</h3>
-                        <p class="opacity-95 leading-relaxed text-sm md:text-xl font-medium text-indigo-50">"การเป็นนักบริหารที่ประสบความสำเร็จ ไม่ใช่การเดา แต่คือการใช้ข้อมูลเชิงคุณภาพมาเปลี่ยนเป็นสารสนเทศเพื่อตอบโจทย์ลูกค้าให้ตรงจุด"</p>
-                    </div>
-                    <div class="pt-2"><button onClick={onRestart} class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 mx-auto w-full md:w-auto">กลับสู่หน้าเริ่มต้นใหม่</button></div>
-                </div>
+            return e('div', { class: THEME.card + ' text-center space-y-6 py-8 relative overflow-hidden' },
+                e('div', { class: 'absolute top-0 left-0 w-full h-4 bg-gradient-to-r from-emerald-400 to-teal-500' }),
+                e('div', { class: 'space-y-2' },
+                    e('h1', { class: 'text-3xl md:text-5xl font-black text-slate-800' }, 'StatBiz CEO'),
+                    e('h2', { class: 'text-2xl md:text-4xl font-black text-indigo-600' }, 'สถิติพิชิตธุรกิจ'),
+                    e('p', { class: 'text-sm md:text-lg text-emerald-700 font-bold bg-emerald-50 border border-emerald-100 inline-block px-4 py-1.5 rounded-full mt-2' }, 'สรุปผลการบริหารธุรกิจของ CEO')
+                ),
+                e('div', { class: 'bg-gradient-to-r from-indigo-50 to-blue-50 border border-indigo-200 text-indigo-900 px-4 py-3 rounded-2xl inline-flex flex-col md:flex-row items-center gap-2 shadow-sm w-full md:w-auto' },
+                    e('div', { class: 'flex items-center gap-2 font-black text-lg md:text-2xl' }, e('span', null, playerInfo.name || 'ผู้บริหาร')),
+                    e('div', { class: 'text-sm font-semibold text-indigo-600 bg-white px-3 py-1 rounded-full shadow-sm' }, `ชั้น ${playerInfo.classStr} | เลขที่ ${playerInfo.number}`)
+                ),
+                e('div', { class: 'grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4' },
+                    e('div', { class: 'bg-orange-50 border border-orange-200 rounded-2xl p-4 flex flex-col items-center shadow-sm' },
+                        e('div', { class: 'text-5xl mb-2' }, '🧋'),
+                        e('h3', { class: 'font-bold text-orange-800' }, 'ร้านเครื่องดื่ม'),
+                        e('div', { class: `text-xs flex items-center font-bold mt-1 ${dS.color}` }, e('span', { class: `w-2.5 h-2.5 rounded-full mr-1 ${dS.dot}` }), dS.text)
+                    ),
+                    e('div', { class: 'bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col items-center shadow-sm' },
+                        e('div', { class: 'text-5xl mb-2' }, '🥐'),
+                        e('h3', { class: 'font-bold text-amber-800' }, 'ร้านเบเกอรี่'),
+                        e('div', { class: `text-xs flex items-center font-bold mt-1 ${bS.color}` }, e('span', { class: `w-2.5 h-2.5 rounded-full mr-1 ${bS.dot}` }), bS.text)
+                    ),
+                    e('div', { class: 'bg-rose-50 border border-rose-200 rounded-2xl p-4 flex flex-col items-center shadow-sm' },
+                        e('div', { class: 'text-5xl mb-2' }, '🥩'),
+                        e('h3', { class: 'font-bold text-rose-800' }, 'ร้านอาหาร'),
+                        e('div', { class: `text-xs flex items-center font-bold mt-1 ${rS.color}` }, e('span', { class: `w-2.5 h-2.5 rounded-full mr-1 ${rS.dot}` }), rS.text)
+                    )
+                ),
+                e('div', { class: 'bg-slate-50 p-5 rounded-3xl border border-slate-200 flex flex-col items-center' },
+                    e('h3', { class: 'font-bold text-slate-500 mb-3 tracking-wide uppercase text-xs flex items-center gap-2' }, createIcon('trending-up'), 'กราฟสรุปคะแนนความแม่นยำ'),
+                    e('div', { class: 'w-full max-w-md bg-slate-200 rounded-full h-6 relative overflow-hidden shadow-inner mb-3' },
+                        e('div', { class: 'bg-gradient-to-r from-indigo-500 to-sky-400 h-full flex items-center justify-end px-3 text-white font-black text-sm transition-all duration-1000', style: { width: `${score}%` } }, `${score}%`)
+                    ),
+                    e('p', { class: 'text-base font-bold text-indigo-700' }, `ระดับการบริหาร: ${score >= 80 ? 'ผู้บริหารระดับสูง 🌟' : score >= 50 ? 'ผู้จัดการทั่วไป 👍' : 'พนักงานฝึกหัด 💡'}`)
+                ),
+                e('div', { class: 'bg-indigo-900 text-white p-6 rounded-3xl max-w-3xl mx-auto shadow-xl text-left relative overflow-hidden' },
+                    e('h3', { class: 'font-bold text-lg mb-2 flex items-center gap-2 text-indigo-200' }, createIcon('star', 'w-5 h-5 text-yellow-400 fill-yellow-400'), 'Key Takeaway'),
+                    e('p', { class: 'opacity-95 leading-relaxed text-sm md:text-xl font-medium text-indigo-50' }, '"การเป็นนักบริหารที่ประสบความสำเร็จ ไม่ใช่การเดา แต่คือการใช้ข้อมูลเชิงคุณภาพมาเปลี่ยนเป็นสารสนเทศเพื่อตอบโจทย์ลูกค้าให้ตรงจุด"')
+                ),
+                e('div', { class: 'pt-2' }, e('button', { onClick: onRestart, class: 'bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 mx-auto w-full md:w-auto' }, 'กลับสู่หน้าเริ่มต้นใหม่'))
             );
         }
 
+        // ส่วนฟังก์ชันช่วย Render หัวข้อภารกิจ
+        function MissionHeader({ title, desc }) {
+            return e('div', { class: 'mb-4' },
+                e('h3', { class: 'text-xl font-black text-indigo-900 mb-2' }, title),
+                e('div', { class: 'bg-indigo-50 p-4 rounded-xl border border-indigo-100' }, e('p', { class: 'text-indigo-800 text-sm md:text-base font-medium leading-relaxed' }, desc))
+            );
+        }
+
+        function SubmitButton({ onClick }) {
+            return e('div', { class: 'mt-6 flex justify-end' },
+                e('button', { onClick: onClick, class: `${THEME.primary} px-6 py-2.5 rounded-xl font-bold text-sm md:text-base flex items-center gap-2 w-full md:w-auto justify-center` }, createIcon('check-circle'), 'ยืนยันคำตอบ')
+            );
+        }
+
+        function ChoiceButton({ onClick, text, icon }) {
+            return e('button', { onClick: onClick, class: 'w-full text-left bg-white border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 p-4 rounded-xl transition-all flex items-center gap-3 group shadow-sm' },
+                icon && e('span', { class: 'text-xl shrink-0' }, icon),
+                e('span', { class: 'flex-1 font-bold text-slate-700 text-sm md:text-base leading-snug' }, text),
+                createIcon('arrow-right')
+            );
+        }
+
+        function ModernInput({ value, onChange, placeholder, className = "" }) {
+            return e('input', { type: 'text', inputMode: 'decimal', placeholder: placeholder, class: `border-2 border-slate-300 rounded-lg px-2 py-1 w-20 font-bold text-indigo-900 text-center outline-none focus:border-indigo-500 text-xs md:text-sm ${className}`, value, onChange: e => onChange(e.target.value) });
+        }
+
+        // --- Missions Components ---
         function Mission1({ onSuccess }) {
             const [queue, setQueue] = React.useState(() => generateRandomQueue());
             const [bins, setBins] = React.useState({ thai: [], cocoa: [], matcha: [] });
@@ -362,417 +353,297 @@
                     if (nextQueue.length === 0) setTimeout(onSuccess, 500);
                 }
             };
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 1: จัดกลุ่มข้อมูลดิบ (Coding)" desc="พนักงานจดออเดอร์มามั่วไปหมด ช่วยแยกประเภทเครื่องดื่ม 20 แก้วลงถังให้ถูกต้อง (แตะที่ถังเพื่อจัดเก็บ)" />
-                    <div class="bg-slate-50 p-4 rounded-2xl min-h-[90px] flex flex-col justify-center items-center border border-slate-200 shadow-inner">
-                        {queue.length > 0 ? (
-                            <>
-                                <div class="text-4xl animate-bounce mb-2">{queue[0]}</div>
-                                <span class="text-slate-400 font-medium bg-white px-3 py-1 rounded-full text-xs border border-slate-100">เหลืออีก {queue.length} คิว</span>
-                            </>
-                        ) : <span class="text-emerald-500 font-bold text-lg flex items-center gap-2"><CheckCircle/> จัดเรียงเสร็จสิ้น!</span>}
-                    </div>
-                    <div class="grid grid-cols-3 gap-2">
-                        <Bin title="ชาไทย" icon="🧋" items={bins.thai} onClick={() => handleSort('thai')} color="bg-orange-50 border-orange-200 text-orange-800" />
-                        <Bin title="โกโก้" icon="🍫" items={bins.cocoa} onClick={() => handleSort('cocoa')} color="bg-amber-50 border-amber-200 text-amber-800" />
-                        <Bin title="มัทฉะ" icon="🍵" items={bins.matcha} onClick={() => handleSort('matcha')} color="bg-green-50 border-green-200 text-green-800" />
-                    </div>
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 1: จัดกลุ่มข้อมูลดิบ (Coding)", desc: "พนักงานจดออเดอร์มามั่วไปหมด ช่วยแยกประเภทเครื่องดื่ม 20 แก้วลงถังให้ถูกต้อง (แตะที่ถังเพื่อจัดเก็บ)" }),
+                e('div', { class: 'bg-slate-50 p-4 rounded-2xl min-h-[90px] flex flex-col justify-center items-center border border-slate-200 shadow-inner' },
+                    queue.length > 0 ? e(React.Fragment, null, e('div', { class: 'text-4xl mb-2' }, queue[0]), e('span', { class: 'text-slate-400 font-medium bg-white px-3 py-1 rounded-full text-xs border border-slate-100' }, `เหลืออีก ${queue.length} คิว`)) : e('span', { class: 'text-emerald-500 font-bold text-lg flex items-center gap-2' }, createIcon('check-circle'), 'จัดเรียงเสร็จสิ้น!')
+                ),
+                e('div', { class: 'grid grid-cols-3 gap-2' },
+                    ['thai', 'cocoa', 'matcha'].map(type => {
+                        let t = "ชาไทย", i = "🧋", c = "bg-orange-50 border-orange-200 text-orange-800", items = bins.thai;
+                        if(type==='cocoa'){ t="โกโก้"; i="🍫"; c="bg-amber-50 border-amber-200 text-amber-800"; items = bins.cocoa; }
+                        if(type==='matcha'){ t="มัทฉะ"; i="🍵"; c="bg-green-50 border-green-200 text-green-800"; items = bins.matcha; }
+                        return e('button', { onClick: () => handleSort(type), class: `${c} border-2 rounded-xl p-3 flex flex-col items-center gap-1 transition-transform hover:scale-105 active:scale-95 w-full` },
+                            e('h4', { class: 'font-bold text-xs md:text-sm' }, t), e('div', { class: 'text-2xl md:text-3xl' }, i),
+                            e('div', { class: 'flex flex-wrap gap-0.5 justify-center h-10 overflow-y-auto w-full bg-white/40 rounded p-1' }, items.map((it, idx) => e('span', { key: idx, class: 'text-xs' }, it))),
+                            e('div', { class: 'bg-white text-slate-800 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm' }, items.length)
+                        );
+                    })
+                )
             );
         }
 
         function Mission2({ onSuccess, onError, onWarning }) {
             const [ans, setAns] = React.useState({ thai: '', cocoa: '', matcha: '' });
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 2: ตารางแจกแจงความถี่ (Frequency)" desc="จากข้อมูลที่แยกไว้ นำตัวเลขมากรอกลงตารางสรุปความถี่ (นับจำนวนแก้ว) ให้ถูกต้องรวม 20 แก้ว" />
-                    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto">
-                        <DataTable headers={['เมนูเครื่องดื่ม', 'ความถี่ (f)']}>
-                            <DataRow icon="🧋" label="ชาไทย" inputVal={ans.thai} onChange={v=>setAns({...ans, thai:v})} />
-                            <DataRow icon="🍫" label="โกโก้" inputVal={ans.cocoa} onChange={v=>setAns({...ans, cocoa:v})} />
-                            <DataRow icon="🍵" label="มัทฉะ" inputVal={ans.matcha} onChange={v=>setAns({...ans, matcha:v})} />
-                            <tr class="bg-indigo-50 font-bold text-indigo-900 border-t"><td class="p-3">รวม (N)</td><td class="p-3 text-center md:text-left">20</td></tr>
-                        </DataTable>
-                    </div>
-                    <SubmitButton onClick={() => {
-                        const t = String(ans.thai).trim(); const c = String(ans.cocoa).trim(); const m = String(ans.matcha).trim();
-                        if(!t || !c || !m) { onWarning('กรุณากรอกข้อมูลให้ครบก่อนตรวจครับ'); return; }
-                        (t === '8' && c === '5' && m === '7') ? onSuccess() : onError();
-                    }} />
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 2: ตารางแจกแจงความถี่ (Frequency)", desc: "จากข้อมูลที่แยกไว้ นำตัวเลขมากรอกลงตารางสรุปความถี่ (นับจำนวนแก้ว) ให้ถูกต้องรวม 20 แก้ว" }),
+                e('div', { class: 'bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto' },
+                    e('table', { class: 'w-full text-left bg-white rounded-xl overflow-hidden shadow-sm min-w-[280px]' },
+                        e('thead', { class: 'bg-indigo-600 text-white font-medium text-xs md:text-sm' }, e('tr', null, e('th', { class: 'p-3' }, 'เมนูเครื่องดื่ม'), e('th', { class: 'p-3' }, 'ความถี่ (f)'))),
+                        e('tbody', { class: 'text-slate-700 divide-y divide-slate-100 text-xs md:text-sm' },
+                            e('tr', null, e('td', { class: 'p-3 font-semibold' }, '🧋 ชาไทย'), e('td', { class: 'p-3' }, e(ModernInput, { value: ans.thai, onChange: v=>setAns({...ans, thai:v}) }))),
+                            e('tr', null, e('td', { class: 'p-3 font-semibold' }, '🍫 โกโก้'), e('td', { class: 'p-3' }, e(ModernInput, { value: ans.cocoa, onChange: v=>setAns({...ans, cocoa:v}) }))),
+                            e('tr', null, e('td', { class: 'p-3 font-semibold' }, '🍵 มัทฉะ'), e('td', { class: 'p-3' }, e(ModernInput, { value: ans.matcha, onChange: v=>setAns({...ans, matcha:v}) }))),
+                            e('tr', { class: 'bg-indigo-50 font-bold text-indigo-900 border-t' }, e('td', { class: 'p-3' }, 'รวม (N)'), e('td', { class: 'p-3' }, '20'))
+                        )
+                    )
+                ),
+                e(SubmitButton, { onClick: () => {
+                    const t = String(ans.thai).trim(); const c = String(ans.cocoa).trim(); const m = String(ans.matcha).trim();
+                    if(!t || !c || !m) { onWarning('กรุณากรอกข้อมูลให้ครบก่อนตรวจครับ'); return; }
+                    (t === '8' && c === '5' && m === '7') ? onSuccess() : onError();
+                }})
             );
         }
 
         function Mission3({ onSuccess, onError, onWarning }) {
             const [ans, setAns] = React.useState({ thai: '', cocoa: '', matcha: '' });
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 3: สัดส่วนความถี่สัมพัทธ์" desc="คำนวณสัดส่วน (ทศนิยม 2 ตำแหน่ง) สูตร: ความถี่ ÷ จำนวนทั้งหมด (N=20)" />
-                    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto">
-                        <DataTable headers={['เมนู', 'ความถี่', 'สัดส่วน (f/N)']}>
-                            <DataRow3 icon="🧋" label="ชาไทย" f="8" inputVal={ans.thai} onChange={v=>setAns({...ans, thai:v})} />
-                            <DataRow3 icon="🍫" label="โกโก้" f="5" inputVal={ans.cocoa} onChange={v=>setAns({...ans, cocoa:v})} />
-                            <DataRow3 icon="🍵" label="มัทฉะ" f="7" inputVal={ans.matcha} onChange={v=>setAns({...ans, matcha:v})} />
-                            <tr class="bg-indigo-50 font-bold text-indigo-900 border-t"><td class="p-3">รวม</td><td class="p-3 text-center">20</td><td class="p-3 text-center">1.00</td></tr>
-                        </DataTable>
-                    </div>
-                    <SubmitButton onClick={() => {
-                        const t = String(ans.thai).trim(); const c = String(ans.cocoa).trim(); const m = String(ans.matcha).trim();
-                        if(!t || !c || !m) { onWarning('กรุณากรอกข้อมูลให้ครบครับ'); return; }
-                        ((t === '0.40' || t === '0.4') && c === '0.25' && m === '0.35') ? onSuccess() : onError();
-                    }} />
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 3: สัดส่วนความถี่สัมพัทธ์", desc: "คำนวณสัดส่วน (ทศนิยม 2 ตำแหน่ง) สูตร: ความถี่ ÷ จำนวนทั้งหมด (N=20)" }),
+                e('div', { class: 'bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto' },
+                    e('table', { class: 'w-full text-left bg-white rounded-xl overflow-hidden shadow-sm min-w-[280px]' },
+                        e('thead', { class: 'bg-indigo-600 text-white font-medium text-xs md:text-sm' }, e('tr', null, e('th', { class: 'p-3' }, 'เมนู'), e('th', { class: 'p-3' }, 'ความถี่'), e('th', { class: 'p-3' }, 'สัดส่วน (f/N)'))),
+                        e('tbody', { class: 'text-slate-700 divide-y divide-slate-100 text-xs md:text-sm' },
+                            e('tr', null, e('td', { class: 'p-3 font-semibold' }, '🧋 ชาไทย'), e('td', { class: 'p-3 text-slate-500 font-bold' }, '8'), e('td', { class: 'p-3' }, e(ModernInput, { value: ans.thai, onChange: v=>setAns({...ans, thai:v}), placeholder: "0.xx" }))),
+                            e('tr', null, e('td', { class: 'p-3 font-semibold' }, '🍫 โกโก้'), e('td', { class: 'p-3 text-slate-500 font-bold' }, '5'), e('td', { class: 'p-3' }, e(ModernInput, { value: ans.cocoa, onChange: v=>setAns({...ans, cocoa:v}), placeholder: "0.xx" }))),
+                            e('tr', null, e('td', { class: 'p-3 font-semibold' }, '🍵 มัทฉะ'), e('td', { class: 'p-3 text-slate-500 font-bold' }, '7'), e('td', { class: 'p-3' }, e(ModernInput, { value: ans.matcha, onChange: v=>setAns({...ans, matcha:v}), placeholder: "0.xx" }))),
+                            e('tr', { class: 'bg-indigo-50 font-bold text-indigo-900 border-t' }, e('td', { class: 'p-3' }, 'รวม'), e('td', { class: 'p-3 text-center' }, '20'), e('td', { class: 'p-3' }, '1.00'))
+                        )
+                    )
+                ),
+                e(SubmitButton, { onClick: () => {
+                    const t = String(ans.thai).trim(); const c = String(ans.cocoa).trim(); const m = String(ans.matcha).trim();
+                    if(!t || !c || !m) { onWarning('กรุณากรอกข้อมูลให้ครบครับ'); return; }
+                    ((t === '0.40' || t === '0.4') && c === '0.25' && m === '0.35') ? onSuccess() : onError();
+                }})
             );
         }
 
         function Mission4({ onSuccess, onError, onWarning }) {
             const [ans, setAns] = React.useState({ thai: '', cocoa: '', matcha: '' });
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 4: ร้อยละความถี่สัมพัทธ์" desc="แปลงค่าสัดส่วนให้เป็นร้อยละเพื่อรายงานผู้ถือหุ้น (สัดส่วน × 100)" />
-                    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto">
-                        <DataTable headers={['เมนู', 'สัดส่วน', 'ร้อยละ (%)']}>
-                            <DataRow3 icon="🧋" label="ชาไทย" f="0.40" inputVal={ans.thai} onChange={v=>setAns({...ans, thai:v})} suffix="%" />
-                            <DataRow3 icon="🍫" label="โกโก้" f="0.25" inputVal={ans.cocoa} onChange={v=>setAns({...ans, cocoa:v})} suffix="%" />
-                            <DataRow3 icon="🍵" label="มัทฉะ" f="0.35" inputVal={ans.matcha} onChange={v=>setAns({...ans, matcha:v})} suffix="%" />
-                            <tr class="bg-indigo-50 font-bold text-indigo-900 border-t"><td class="p-3">รวม</td><td class="p-3 text-center">1.00</td><td class="p-3 text-center">100 %</td></tr>
-                        </DataTable>
-                    </div>
-                    <SubmitButton onClick={() => {
-                        const t = String(ans.thai).trim(); const c = String(ans.cocoa).trim(); const m = String(ans.matcha).trim();
-                        if(!t || !c || !m) { onWarning('กรุณากรอกข้อมูลให้ครบครับ'); return; }
-                        (t === '40' && c === '25' && m === '35') ? onSuccess() : onError();
-                    }} />
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 4: ร้อยละความถี่สัมพัทธ์", desc: "แปลงค่าสัดส่วนให้เป็นร้อยละเพื่อรายงานผู้ถือหุ้น (สัดส่วน × 100)" }),
+                e('div', { class: 'bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto' },
+                    e('table', { class: 'w-full text-left bg-white rounded-xl overflow-hidden shadow-sm min-w-[280px]' },
+                        e('thead', { class: 'bg-indigo-600 text-white font-medium text-xs md:text-sm' }, e('tr', null, e('th', { class: 'p-3' }, 'เมนู'), e('th', { class: 'p-3' }, 'สัดส่วน'), e('th', { class: 'p-3' }, 'ร้อยละ (%)'))),
+                        e('tbody', { class: 'text-slate-700 divide-y divide-slate-100 text-xs md:text-sm' },
+                            e('tr', null, e('td', { class: 'p-3 font-semibold' }, '🧋 ชาไทย'), e('td', { class: 'p-3 text-slate-500 font-bold' }, '0.40'), e('td', { class: 'p-3 flex items-center gap-1' }, e(ModernInput, { value: ans.thai, onChange: v=>setAns({...ans, thai:v}) }), e('span', { class: 'font-bold text-slate-400' }, '%'))),
+                            e('tr', null, e('td', { class: 'p-3 font-semibold' }, '🍫 โกโก้'), e('td', { class: 'p-3 text-slate-500 font-bold' }, '0.25'), e('td', { class: 'p-3 flex items-center gap-1' }, e(ModernInput, { value: ans.cocoa, onChange: v=>setAns({...ans, cocoa:v}) }), e('span', { class: 'font-bold text-slate-400' }, '%'))),
+                            e('tr', null, e('td', { class: 'p-3 font-semibold' }, '🍵 มัทฉะ'), e('td', { class: 'p-3 text-slate-500 font-bold' }, '0.35'), e('td', { class: 'p-3 flex items-center gap-1' }, e(ModernInput, { value: ans.matcha, onChange: v=>setAns({...ans, matcha:v}) }), e('span', { class: 'font-bold text-slate-400' }, '%'))),
+                            e('tr', { class: 'bg-indigo-50 font-bold text-indigo-900 border-t' }, e('td', { class: 'p-3' }, 'รวม'), e('td', { class: 'p-3 text-center' }, '1.00'), e('td', { class: 'p-3' }, '100 %'))
+                        )
+                    )
+                ),
+                e(SubmitButton, { onClick: () => {
+                    const t = String(ans.thai).trim(); const c = String(ans.cocoa).trim(); const m = String(ans.matcha).trim();
+                    if(!t || !c || !m) { onWarning('กรุณากรอกข้อมูลให้ครบครับ'); return; }
+                    (t === '40' && c === '25' && m === '35') ? onSuccess() : onError();
+                }})
             );
         }
 
         function Mission5({ onSuccess, onError }) {
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 5: หาฐานนิยม (Mode)" desc="เพื่อสั่งวัตถุดิบล็อตใหญ่ให้คุ้มที่สุด เราต้องรู้ว่าเมนูไหนคือ 'ฐานนิยม' (ข้อมูลที่มีความถี่สูงสุด)" />
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <ChoiceButton onClick={onError} icon="🍫" text="โกโก้ (25%)" />
-                        <ChoiceButton onClick={onSuccess} icon="🧋" text="ชาไทย (40%)" />
-                        <ChoiceButton onClick={onError} icon="🍵" text="มัทฉะ (35%)" />
-                    </div>
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 5: หาฐานนิยม (Mode)", desc: "เพื่อสั่งวัตถุดิบล็อตใหญ่ให้คุ้มที่สุด เราต้องรู้ว่าเมนูไหนคือ 'ฐานนิยม' (ข้อมูลที่มีความถี่สูงสุด)" }),
+                e('div', { class: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
+                    e(ChoiceButton, { onClick: onError, icon: "🍫", text: "โกโก้ (25%)" }),
+                    e(ChoiceButton, { onClick: onSuccess, icon: "🧋", text: "ชาไทย (40%)" }),
+                    e(ChoiceButton, { onClick: onError, icon: "🍵", text: "มัทฉะ (35%)" })
+                )
             );
         }
 
         function Mission6({ onSuccess, onError, onWarning }) {
             const [ans1, setAns1] = React.useState(''); const [ans2, setAns2] = React.useState('');
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 6: ตารางจำแนกสองทาง" desc="เติมตัวเลขที่หายไปในตารางจำแนกความชอบของลูกค้า (รวมแนวนอนต้องได้ Total)" />
-                    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto">
-                        <table class="w-full text-center bg-white rounded-xl overflow-hidden shadow-sm min-w-[300px]">
-                            <thead class="bg-indigo-600 text-white text-sm">
-                                <tr><th class="p-3">ลูกค้า</th><th class="p-3">เค้ก 🍰</th><th class="p-3">ครัวซองต์ 🥐</th><th class="p-3 bg-indigo-700">รวม</th></tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 text-sm">
-                                <tr><td class="p-3 font-bold bg-slate-50">วัยรุ่น</td><td class="p-3">30</td><td><ModernInput value={ans1} onChange={setAns1} /></td><td class="p-3 font-bold bg-indigo-50 text-indigo-900">50</td></tr>
-                                <tr><td class="p-3 font-bold bg-slate-50">ผู้ใหญ่</td><td><ModernInput value={ans2} onChange={setAns2} /></td><td class="p-3">40</td><td class="p-3 font-bold bg-indigo-50 text-indigo-900">50</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <SubmitButton onClick={() => {
-                        const v1 = String(ans1).trim(); const v2 = String(ans2).trim();
-                        if(!v1 || !v2) { onWarning('กรุณากรอกข้อมูลให้ครบทั้ง 2 ช่องครับ'); return; }
-                        (v1 === '20' && v2 === '10') ? onSuccess() : onError();
-                    }} />
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 6: ตารางจำแนกสองทาง", desc: "เติมตัวเลขที่หายไปในตารางจำแนกความชอบของลูกค้า (รวมแนวนอนต้องได้ Total)" }),
+                e('div', { class: 'bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto' },
+                    e('table', { class: 'w-full text-center bg-white rounded-xl overflow-hidden shadow-sm min-w-[300px]' },
+                        e('thead', { class: 'bg-indigo-600 text-white text-sm' }, e('tr', null, e('th', { class: 'p-3' }, 'ลูกค้า'), e('th', { class: 'p-3' }, 'เค้ก 🍰'), e('th', { class: 'p-3' }, 'ครัวซองต์ 🥐'), e('th', { class: 'p-3 bg-indigo-700' }, 'รวม'))),
+                        e('tbody', { class: 'divide-y divide-slate-100 text-sm' },
+                            e('tr', null, e('td', { class: 'p-3 font-bold bg-slate-50' }, 'วัยรุ่น'), e('td', { class: 'p-3' }, '30'), e('td', { class: 'p-3' }, e(ModernInput, { value: ans1, onChange: setAns1 })), e('td', { class: 'p-3 font-bold bg-indigo-50 text-indigo-900' }, '50')),
+                            e('tr', null, e('td', { class: 'p-3 font-bold bg-slate-50' }, 'ผู้ใหญ่'), e('td', { class: 'p-3' }, e(ModernInput, { value: ans2, onChange: setAns2 })), e('td', { class: 'p-3' }, '40'), e('td', { class: 'p-3 font-bold bg-indigo-50 text-indigo-900' }, '50'))
+                        )
+                    )
+                ),
+                e(SubmitButton, { onClick: () => {
+                    const v1 = String(ans1).trim(); const v2 = String(ans2).trim();
+                    if(!v1 || !v2) { onWarning('กรุณากรอกข้อมูลให้ครบทั้ง 2 ช่องครับ'); return; }
+                    (v1 === '20' && v2 === '10') ? onSuccess() : onError();
+                }})
             );
         }
 
         function Mission7({ onSuccess, onError, onWarning }) {
             const [ans1, setAns1] = React.useState(''); const [ans2, setAns2] = React.useState(''); const [ans3, setAns3] = React.useState('');
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 7: คำนวณผลรวมข้ามมิติ" desc="หาผลรวมในแนวตั้ง เพื่อดูว่าโดยรวมแล้วขนมชนิดไหนขายดีที่สุดโดยไม่แยกอายุ" />
-                    <div class="bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto">
-                        <table class="w-full text-center bg-white rounded-xl overflow-hidden shadow-sm min-w-[350px]">
-                            <thead class="bg-indigo-600 text-white text-sm">
-                                <tr><th class="p-3">ลูกค้า</th><th class="p-3">เค้ก 🍰</th><th class="p-3">ครัวซองต์ 🥐</th><th class="p-3 bg-indigo-700">รวม</th></tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 text-sm">
-                                <tr><td class="p-3 bg-slate-50">วัยรุ่น</td><td class="p-3 text-slate-500">30</td><td class="p-3 text-slate-500">20</td><td class="p-3 bg-slate-50 font-medium">50</td></tr>
-                                <tr><td class="p-3 bg-slate-50">ผู้ใหญ่</td><td class="p-3 text-slate-500">10</td><td class="p-3 text-slate-500">40</td><td class="p-3 bg-slate-50 font-medium">50</td></tr>
-                                <tr class="bg-indigo-50 font-bold text-indigo-900">
-                                    <td class="p-3">รวมแนวตั้ง</td>
-                                    <td><ModernInput placeholder="เค้ก" value={ans1} onChange={setAns1} /></td>
-                                    <td><ModernInput placeholder="ครัวซองต์" value={ans2} onChange={setAns2} /></td>
-                                    <td><ModernInput placeholder="ทั้งหมด" value={ans3} onChange={setAns3} className="bg-indigo-100 border-indigo-300" /></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <SubmitButton onClick={() => {
-                        const v1 = String(ans1).trim(); const v2 = String(ans2).trim(); const v3 = String(ans3).trim();
-                        if(!v1 || !v2 || !v3) { onWarning('กรุณากรอกผลรวมให้ครบครับ'); return; }
-                        (v1 === '40' && v2 === '60' && v3 === '100') ? onSuccess() : onError();
-                    }} />
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 7: คำนวณผลรวมข้ามมิติ", desc: "หาผลรวมในแนวตั้ง เพื่อดูว่าโดยรวมแล้วขนมชนิดไหนขายดีที่สุดโดยไม่แยกอายุ" }),
+                e('div', { class: 'bg-slate-50 rounded-2xl p-3 border border-slate-200 overflow-x-auto' },
+                    e('table', { class: 'w-full text-center bg-white rounded-xl overflow-hidden shadow-sm min-w-[350px]' },
+                        e('thead', { class: 'bg-indigo-600 text-white text-sm' }, e('tr', null, e('th', { class: 'p-3' }, 'ลูกค้า'), e('th', { class: 'p-3' }, 'เค้ก 🍰'), e('th', { class: 'p-3' }, 'ครัวซองต์ 🥐'), e('th', { class: 'p-3 bg-indigo-700' }, 'รวม'))),
+                        e('tbody', { class: 'divide-y divide-slate-100 text-sm' },
+                            e('tr', null, e('td', { class: 'p-3 bg-slate-50' }, 'วัยรุ่น'), e('td', { class: 'p-3 text-slate-500' }, '30'), e('td', { class: 'p-3 text-slate-500' }, '20'), e('td', { class: 'p-3 bg-slate-50 font-medium' }, '50')),
+                            e('tr', null, e('td', { class: 'p-3 bg-slate-50' }, 'ผู้ใหญ่'), e('td', { class: 'p-3 text-slate-500' }, '10'), e('td', { class: 'p-3 text-slate-500' }, '40'), e('td', { class: 'p-3 bg-slate-50 font-medium' }, '50')),
+                            e('tr', { class: 'bg-indigo-50 font-bold text-indigo-900' },
+                                e('td', { class: 'p-3' }, 'รวมแนวตั้ง'),
+                                e('td', null, e(ModernInput, { placeholder: "เค้ก", value: ans1, onChange: setAns1 })),
+                                e('td', null, e(ModernInput, { placeholder: "ครัวซองต์", value: ans2, onChange: setAns2 })),
+                                e('td', null, e(ModernInput, { placeholder: "ทั้งหมด", value: ans3, onChange: setAns3, className: "bg-indigo-100 border-indigo-300" }))
+                            )
+                        )
+                    )
+                ),
+                e(SubmitButton, { onClick: () => {
+                    const v1 = String(ans1).trim(); const v2 = String(ans2).trim(); const v3 = String(ans3).trim();
+                    if(!v1 || !v2 || !v3) { onWarning('กรุณากรอกผลรวมให้ครบครับ'); return; }
+                    (v1 === '40' && v2 === '60' && v3 === '100') ? onSuccess() : onError();
+                }})
             );
         }
 
         function Mission8({ onSuccess, onError }) {
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 8: แผนภูมิแท่งจำแนกพหุ" desc="เลือกกราฟที่นำเสนอเปรียบเทียบความชอบระหว่าง 'วัยรุ่น' และ 'ผู้ใหญ่' ได้ถูกต้องชัดเจนที่สุด" />
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div onClick={onSuccess} class="bg-white border-2 border-slate-200 hover:border-indigo-400 rounded-3xl p-4 cursor-pointer transition-all group">
-                            <h4 class="text-center font-bold mb-4 text-indigo-800 bg-indigo-50 py-1.5 rounded-lg">ตัวเลือก A</h4>
-                            <div class="flex justify-around items-end h-36 border-b-2 border-slate-300 pb-2 relative px-2">
-                                <div class="flex flex-col items-center gap-2 w-1/2 h-full justify-end">
-                                    <div class="flex gap-1.5 items-end w-full justify-center">
-                                        <div class="bg-pink-400 w-7 rounded-t shadow-md h-[65px]"></div>
-                                        <div class="bg-amber-500 w-7 rounded-t shadow-md h-[45px]"></div>
-                                    </div>
-                                    <span class="text-xs font-bold text-slate-500">วัยรุ่น</span>
-                                </div>
-                                <div class="flex flex-col items-center gap-2 w-1/2 h-full justify-end">
-                                    <div class="flex gap-1.5 items-end w-full justify-center">
-                                        <div class="bg-pink-400 w-7 rounded-t shadow-md h-[25px]"></div>
-                                        <div class="bg-amber-500 w-7 rounded-t shadow-md h-[85px]"></div>
-                                    </div>
-                                    <span class="text-xs font-bold text-slate-500">ผู้ใหญ่</span>
-                                </div>
-                            </div>
-                            <div class="flex justify-center gap-4 mt-4 text-xs font-medium text-slate-500">
-                                <span class="flex items-center gap-1"><div class="w-3 h-3 bg-pink-400 rounded"></div> เค้ก</span>
-                                <span class="flex items-center gap-1"><div class="w-3 h-3 bg-amber-500 rounded"></div> ครัวซองต์</span>
-                            </div>
-                        </div>
-                        <div onClick={onError} class="bg-white border-2 border-slate-200 hover:border-rose-400 rounded-3xl p-4 cursor-pointer transition-all group">
-                            <h4 class="text-center font-bold mb-4 text-slate-500 bg-slate-50 py-1.5 rounded-lg">ตัวเลือก B</h4>
-                            <div class="flex justify-around items-end h-36 border-b-2 border-slate-300 pb-2 relative px-2">
-                                <div class="flex gap-6 items-end w-full justify-center h-full">
-                                    <div class="flex flex-col items-center gap-2 justify-end h-full">
-                                        <div class="bg-pink-400 w-12 rounded-t shadow-md h-[60px]"></div>
-                                        <span class="text-xs font-bold text-slate-500">รวมเค้ก</span>
-                                    </div>
-                                    <div class="flex flex-col items-center gap-2 justify-end h-full">
-                                        <div class="bg-amber-500 w-12 rounded-t shadow-md h-[90px]"></div>
-                                        <span class="text-xs font-bold text-slate-500">รวมครัวซองต์</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 8: แผนภูมิแท่งจำแนกพหุ", desc: "เลือกกราฟที่นำเสนอเปรียบเทียบความชอบระหว่าง 'วัยรุ่น' และ 'ผู้ใหญ่' ได้ถูกต้องชัดเจนที่สุด" }),
+                e('div', { class: 'grid grid-cols-1 md:grid-cols-2 gap-4' },
+                    e('div', { onClick: onSuccess, class: 'bg-white border-2 border-slate-200 hover:border-indigo-400 rounded-3xl p-4 cursor-pointer transition-all group' },
+                        e('h4', { class: 'text-center font-bold mb-4 text-indigo-800 bg-indigo-50 py-1.5 rounded-lg' }, 'ตัวเลือก A'),
+                        e('div', { class: 'flex justify-around items-end h-36 border-b-2 border-slate-300 pb-2 relative px-2' },
+                            e('div', { class: 'flex flex-col items-center gap-2 w-1/2 h-full justify-end' },
+                                e('div', { class: 'flex gap-1.5 items-end w-full justify-center' }, e('div', { class: 'bg-pink-400 w-7 rounded-t shadow-md h-[65px]' }), e('div', { class: 'bg-amber-500 w-7 rounded-t shadow-md h-[45px]' })),
+                                e('span', { class: 'text-xs font-bold text-slate-500' }, 'วัยรุ่น')
+                            ),
+                            e('div', { class: 'flex flex-col items-center gap-2 w-1/2 h-full justify-end' },
+                                e('div', { class: 'flex gap-1.5 items-end w-full justify-center' }, e('div', { class: 'bg-pink-400 w-7 rounded-t shadow-md h-[25px]' }), e('div', { class: 'bg-amber-500 w-7 rounded-t shadow-md h-[85px]' })),
+                                e('span', { class: 'text-xs font-bold text-slate-500' }, 'ผู้ใหญ่')
+                            )
+                        ),
+                        e('div', { class: 'flex justify-center gap-4 mt-4 text-xs font-medium text-slate-500' },
+                            e('span', { class: 'flex items-center gap-1' }, e('div', { class: 'w-3 h-3 bg-pink-400 rounded' }), ' เค้ก'),
+                            e('span', { class: 'flex items-center gap-1' }, e('div', { class: 'w-3 h-3 bg-amber-500 rounded' }), ' ครัวซองต์')
+                        )
+                    ),
+                    e('div', { onClick: onError, class: 'bg-white border-2 border-slate-200 hover:border-rose-400 rounded-3xl p-4 cursor-pointer transition-all group' },
+                        e('h4', { class: 'text-center font-bold mb-4 text-slate-500 bg-slate-50 py-1.5 rounded-lg' }, 'ตัวเลือก B'),
+                        e('div', { class: 'flex justify-around items-end h-36 border-b-2 border-slate-300 pb-2 relative px-2' },
+                            e('div', { class: 'flex gap-6 items-end w-full justify-center h-full' },
+                                e('div', { class: 'flex flex-col items-center gap-2 justify-end h-full' }, e('div', { class: 'bg-pink-400 w-12 rounded-t shadow-md h-[60px]' }), e('span', { class: 'text-xs font-bold text-slate-500' }, 'รวมเค้ก')),
+                                e('div', { class: 'flex flex-col items-center gap-2 justify-end h-full' }, e('div', { class: 'bg-amber-500 w-12 rounded-t shadow-md h-[90px]' }), e('span', { class: 'text-xs font-bold text-slate-500' }, 'รวมครัวซองต์'))
+                            )
+                        )
+                    )
+                )
             );
         }
 
         function Mission9({ onSuccess, onError }) {
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 9: อ่านกราฟวงกลม (Pie Chart)" desc="กราฟแสดงสัดส่วนช่วงเวลาที่ลูกค้าเข้าร้านหนาแน่นที่สุด ช่วงเวลาใดควรเตรียมพนักงานไว้มากที่สุด?" />
-                    <div class="flex flex-col md:flex-row items-center justify-center gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-200">
-                        <div class="w-48 h-48 rounded-full border-4 border-white shadow-lg relative flex items-center justify-center shrink-0" style={{ background: 'conic-gradient(#f472b6 0% 25%, #fbbf24 25% 40%, #38bdf8 40% 100%)' }}>
-                            <span class="absolute top-6 right-4 text-white font-black text-xs">เช้า 25%</span>
-                            <span class="absolute bottom-8 right-2 text-white font-black text-xs">บ่าย 15%</span>
-                            <span class="absolute top-1/2 left-4 -translate-y-1/2 text-white font-black text-xl">เย็น 60%</span>
-                        </div>
-                        <div class="flex-1 space-y-2 w-full max-w-sm">
-                            <ChoiceButton onClick={onError} text="ช่วงเช้า (สีชมพู)" />
-                            <ChoiceButton onClick={onError} text="ช่วงบ่าย (สีเหลือง)" />
-                            <ChoiceButton onClick={onSuccess} text="ช่วงเย็น (สีฟ้า)" />
-                        </div>
-                    </div>
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 9: อ่านกราฟวงกลม (Pie Chart)", desc: "กราฟแสดงสัดส่วนช่วงเวลาที่ลูกค้าเข้าร้านหนาแน่นที่สุด ช่วงเวลาใดควรเตรียมพนักงานไว้มากที่สุด?" }),
+                e('div', { class: 'flex flex-col md:flex-row items-center justify-center gap-6 bg-slate-50 p-6 rounded-3xl border border-slate-200' },
+                    e('div', { class: 'w-48 h-48 rounded-full border-4 border-white shadow-lg relative flex items-center justify-center shrink-0', style: { background: 'conic-gradient(#f472b6 0% 25%, #fbbf24 25% 40%, #38bdf8 40% 100%)' } },
+                        e('span', { class: 'absolute top-6 right-4 text-white font-black text-xs' }, 'เช้า 25%'),
+                        e('span', { class: 'absolute bottom-8 right-2 text-white font-black text-xs' }, 'บ่าย 15%'),
+                        e('span', { class: 'absolute top-1/2 left-4 -translate-y-1/2 text-white font-black text-xl' }, 'เย็น 60%')
+                    ),
+                    e('div', { class: 'flex-1 space-y-2 w-full max-w-sm' },
+                        e(ChoiceButton, { onClick: onError, text: "ช่วงเช้า (สีชมพู)" }),
+                        e(ChoiceButton, { onClick: onError, text: "ช่วงบ่าย (สีเหลือง)" }),
+                        e(ChoiceButton, { onClick: onSuccess, text: "ช่วงเย็น (สีฟ้า)" })
+                    )
+                )
             );
         }
 
-        // Shared Inline UI components
-        function MissionHeader({ title, desc }) {
-            return (
-                <div class="mb-4">
-                    <h3 class="text-xl font-black text-indigo-900 mb-2">{title}</h3>
-                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100"><p class="text-indigo-800 text-sm md:text-base font-medium leading-relaxed">{desc}</p></div>
-                </div>
-            );
-        }
-
-        function Bin({ title, icon, items, onClick, color }) {
-            return (
-                <button onClick={onClick} class={`${color} border-2 rounded-xl p-3 flex flex-col items-center gap-1 transition-transform hover:scale-105 active:scale-95 w-full`}>
-                    <h4 class="font-bold text-xs md:text-sm">{title}</h4>
-                    <div class="text-2xl md:text-3xl">{icon}</div>
-                    <div class="flex flex-wrap gap-0.5 justify-center h-10 overflow-y-auto w-full bg-white/40 rounded p-1">
-                        {items.map((item, i) => <span key={i} class="text-xs">{item}</span>)}
-                    </div>
-                    <div class="bg-white text-slate-800 px-2 py-0.5 rounded-full text-xs font-bold shadow-sm">{items.length}</div>
-                </button>
-            );
-        }
-
-        function ChoiceButton({ onClick, text, icon }) {
-            return (
-                <button onClick={onClick} class="w-full text-left bg-white border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 p-4 rounded-xl transition-all flex items-center gap-3 group shadow-sm">
-                    {icon && <span class="text-xl shrink-0">{icon}</span>}
-                    <span class="flex-1 font-bold text-slate-700 text-sm md:text-base leading-snug">{text}</span>
-                    <ArrowRight />
-                </button>
-            );
-        }
-
-        function SubmitButton({ onClick }) {
-            return (
-                <div class="mt-6 flex justify-end">
-                    <button onClick={onClick} class={`${THEME.primary} px-6 py-2.5 rounded-xl font-bold text-sm md:text-base flex items-center gap-2 w-full md:w-auto justify-center`}>
-                        <CheckCircle /> ยืนยันคำตอบ
-                    </button>
-                </div>
-            );
-        }
-
-        function DataTable({ headers, children }) {
-            return (
-                <table class="w-full text-left bg-white rounded-xl overflow-hidden shadow-sm min-w-[280px]">
-                    <thead class="bg-indigo-600 text-white font-medium text-xs md:text-sm">
-                        <tr>{headers.map((h, i) => <th key={i} class="p-3">{h}</th>)}</tr>
-                    </thead>
-                    <tbody class="text-slate-700 divide-y divide-slate-100 text-xs md:text-sm">{children}</tbody>
-                </table>
-            );
-        }
-
-        function DataRow({ icon, label, inputVal, onChange }) {
-            return (
-                <tr>
-                    <td class="p-3 font-semibold flex items-center gap-1.5"><span>{icon}</span> {label}</td>
-                    <td class="p-3"><ModernInput value={inputVal} onChange={onChange} /></td>
-                </tr>
-            );
-        }
-
-        function DataRow3({ icon, label, f, inputVal, onChange, suffix }) {
-            return (
-                <tr>
-                    <td class="p-3 font-semibold flex items-center gap-1.5"><span>{icon}</span> {label}</td>
-                    <td class="p-3 text-slate-500 font-bold text-center md:text-left">{f}</td>
-                    <td class="p-3">
-                        <div class="flex items-center gap-1 justify-center md:justify-start">
-                            <ModernInput value={inputVal} onChange={onChange} placeholder={suffix ? "" : "0.xx"} />
-                            {suffix && <span class="font-bold text-slate-400 text-xs">{suffix}</span>}
-                        </div>
-                    </td>
-                </tr>
-            );
-        }
-
-        function ModernInput({ value, onChange, placeholder, className = "" }) {
-            return (
-                <input type="text" inputMode="decimal" placeholder={placeholder} class={`border-2 border-slate-300 rounded-lg px-2 py-1 w-20 font-bold text-indigo-900 text-center outline-none focus:border-indigo-500 text-xs md:text-sm ${className}`} value={value} onChange={e => onChange(e.target.value)} />
-            );
-        }
-
-        // Remaining Missions Placeholder to match functionality
         function Mission10({ onSuccess, onError }) {
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 10: วิเคราะห์ข้อจำกัดของสถิติ" desc="ข้อมูลเชิงคุณภาพ มีข้อจำกัดบางอย่าง ข้อใดกล่าวถูกต้องที่สุดเกี่ยวกับการนำ 'หน้าตาของเค้กที่ชอบ' มาคำนวณ?" />
-                    <div class="space-y-3">
-                        <ChoiceButton onClick={onError} text="ก. สามารถนำมาหาค่าเฉลี่ย (Mean) ได้ ถ้านำไปให้คะแนน 1-10" />
-                        <ChoiceButton onClick={onSuccess} text="ข. เป็นข้อมูลเชิงคุณภาพ สามารถหาได้แค่ 'ฐานนิยม' แต่หา 'ค่าเฉลี่ยเลขคณิต' ไม่ได้" />
-                        <ChoiceButton onClick={onError} text="ค. ข้อมูลเชิงคุณภาพไม่สามารถนำมาทำตารางความถี่ได้เลย" />
-                    </div>
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 10: วิเคราะห์ข้อจำกัดของสถิติ", desc: "ข้อมูลเชิงคุณภาพ มีข้อจำกัดบางอย่าง ข้อใดกล่าวถูกต้องที่สุดเกี่ยวกับการนำ 'หน้าตาของเค้กที่ชอบ' มาคำนวณ?" }),
+                e('div', { class: 'space-y-3' },
+                    e(ChoiceButton, { onClick: onError, text: "ก. สามารถนำมาหาค่าเฉลี่ย (Mean) ได้ ถ้านำไปให้คะแนน 1-10" }),
+                    e(ChoiceButton, { onClick: onSuccess, text: "ข. เป็นข้อมูลเชิงคุณภาพ สามารถหาได้แค่ 'ฐานนิยม' แต่หา 'ค่าเฉลี่ยเลขคณิต' ไม่ได้" }),
+                    e(ChoiceButton, { onClick: onError, text: "ค. ข้อมูลเชิงคุณภาพไม่สามารถนำมาทำตารางความถี่ได้เลย" })
+                )
             );
         }
 
         function Mission11({ onSuccess, onError, onWarning }) {
             const [selections, setSelections] = React.useState({ r1: '', r2: '', r3: '', r4: '', r5: '' });
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 11: วิเคราะห์ข้อความรีวิว" desc="อ่านรีวิวด้านลบจากลูกค้า แล้วเลือกหมวดหมู่ปัญหาหลักให้ถูกต้องเพื่อนำไปปรับปรุงร้าน Fine Dining" />
-                    <div class="space-y-3">
-                        <ReviewRow text="สเต็กเนื้อเหนียวมาก ซอสก็เค็มไปหน่อย เสียใจมากค่ะ" val={selections.r1} onChange={v => setSelections({...selections, r1: v})} />
-                        <ReviewRow text="พนักงานไม่สนใจเลย เรียกเช็คบิลรอไป 20 นาที" val={selections.r2} onChange={v => setSelections({...selections, r2: v})} />
-                        <ReviewRow text="จองโต๊ะไว้ล่วงหน้า แต่พอมาถึงกลับบอกว่าโต๊ะเต็ม ระบบแย่มาก" val={selections.r3} onChange={v => setSelections({...selections, r3: v})} />
-                        <ReviewRow text="อร่อยนะ แต่ให้ปริมาณนิดเดียวเมื่อเทียบกับเงินที่จ่าย แพงเกินไปมาก" val={selections.r4} onChange={v => setSelections({...selections, r4: v})} />
-                        <ReviewRow text="น้ำเปล่าขวดละ 200 บาท ราคาขูดรีดมากเกินไปครับ" val={selections.r5} onChange={v => setSelections({...selections, r5: v})} />
-                    </div>
-                    <SubmitButton onClick={() => {
-                        if(!selections.r1 || !selections.r2 || !selections.r3 || !selections.r4 || !selections.r5) { onWarning('กรุณาจัดหมวดหมู่ให้ครบ 5 ช่องครับ'); return; }
-                        (selections.r1 === 'taste' && selections.r2 === 'service' && selections.r3 === 'service' && selections.r4 === 'price' && selections.r5 === 'price') ? onSuccess() : onError();
-                    }} />
-                </div>
-            );
-        }
-
-        function ReviewRow({ text, val, onChange }) {
-            return (
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs md:text-sm">
-                    <p class="italic text-slate-700 font-medium text-left">"{text}"</p>
-                    <select class="border-2 border-slate-300 rounded-lg p-1.5 bg-white font-bold text-indigo-900 w-full sm:w-auto outline-none" value={val} onChange={e => onChange(e.target.value)}>
-                        <option value="">-- ปัญหา --</option>
-                        <option value="taste">🍽️ รสชาติ</option>
-                        <option value="service">👨‍🍳 บริการ</option>
-                        <option value="price">💸 ราคา</option>
-                    </select>
-                </div>
+            const reviews = [
+                { id: 'r1', text: "สเต็กเนื้อเหนียวมาก ซอสก็เค็มไปหน่อย เสียใจมากค่ะ" },
+                { id: 'r2', text: "พนักงานไม่สนใจเลย เรียกเช็คบิลรอไป 20 นาที" },
+                { id: 'r3', text: "จองโต๊ะไว้ล่วงหน้า แต่พอมาถึงกลับบอกว่าโต๊ะเต็ม ระบบแย่มาก" },
+                { id: 'r4', text: "อร่อยนะ แต่ให้ปริมาณนิดเดียวเมื่อเทียบกับเงินที่จ่าย แพงเกินไปมาก" },
+                { id: 'r5', text: "น้ำเปล่าขวดละ 200 บาท ราคาขูดรีดมากเกินไปครับ" }
+            ];
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 11: วิเคราะห์ข้อความรีวิว", desc: "อ่านรีวิวด้านลบจากลูกค้า แล้วเลือกหมวดหมู่ปัญหาหลักให้ถูกต้องเพื่อนำไปปรับปรุงร้าน Fine Dining" }),
+                e('div', { class: 'space-y-3' },
+                    reviews.map(r => e('div', { key: r.id, class: 'bg-slate-50 p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs md:text-sm' },
+                        e('p', { class: 'italic text-slate-700 font-medium text-left' }, `"${r.text}"`),
+                        e('select', { 
+                            class: 'border-2 border-slate-300 rounded-lg p-1.5 bg-white font-bold text-indigo-900 w-full sm:w-auto outline-none', 
+                            value: selections[r.id], 
+                            onChange: e => setSelections({...selections, [r.id]: e.target.value}) 
+                        },
+                            e('option', { value: "" }, "-- ปัญหา --"),
+                            e('option', { value: "taste" }, "🍽️ รสชาติ"),
+                            e('option', { value: "service" }, "👨‍🍳 บริการ"),
+                            e('option', { value: "price" }, "💸 ราคา")
+                        )
+                    ))
+                ),
+                e(SubmitButton, { onClick: () => {
+                    if(!selections.r1 || !selections.r2 || !selections.r3 || !selections.r4 || !selections.r5) { onWarning('กรุณาจัดหมวดหมู่ให้ครบ 5 ช่องครับ'); return; }
+                    (selections.r1 === 'taste' && selections.r2 === 'service' && selections.r3 === 'service' && selections.r4 === 'price' && selections.r5 === 'price') ? onSuccess() : onError();
+                }})
             );
         }
 
         function Mission12({ onSuccess, onError }) {
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 12: ตัดสินใจจากฐานนิยม" desc="จากข้อที่แล้ว ถ้าผลรีวิว 100 ข้อความพบว่า: บ่นรสชาติ 20%, บ่นบริการ 70%, บ่นราคา 10% CEO ต้องสั่งแก้ปัญหาใดด่วนที่สุด?" />
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <ChoiceButton onClick={onError} text="รสชาติอาหาร (20%)" icon="🍽️" />
-                        <ChoiceButton onClick={onSuccess} text="การบริการพนักงาน (70%)" icon="👨‍🍳" />
-                        <ChoiceButton onClick={onError} text="ราคาแพง (10%)" icon="💸" />
-                    </div>
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 12: ตัดสินใจจากฐานนิยม", desc: "จากข้อที่แล้ว ถ้าผลรีวิว 100 ข้อความพบว่า: บ่นรสชาติ 20%, บ่นบริการ 70%, บ่นราคา 10% CEO ต้องสั่งแก้ปัญหาใดด่วนที่สุด?" }),
+                e('div', { class: 'grid grid-cols-1 md:grid-cols-3 gap-3' },
+                    e(ChoiceButton, { onClick: onError, text: "รสชาติอาหาร (20%)", icon: "🍽️" }),
+                    e(ChoiceButton, { onClick: onSuccess, text: "การบริการพนักงาน (70%)", icon: "👨‍🍳" }),
+                    e(ChoiceButton, { onClick: onError, text: "ราคาแพง (10%)", icon: "💸" })
+                )
             );
         }
 
         function Mission13({ onSuccess, onError }) {
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 13: วางแผนยุทธศาสตร์" desc="จะเปิดสาขาใหม่ แดชบอร์ดรายงานว่า 'คนทำงานย่านสีลมชอบทานเนื้อวัวพรีเมียม (85%)' ควรเลือกทำเลและวัตถุดิบอย่างไร?" />
-                    <div class="space-y-3">
-                        <ChoiceButton onClick={onError} text="เปิดย่านสยามสแควร์ (วัยรุ่น) และเน้นเมนูหมูกระทะ" />
-                        <ChoiceButton onClick={onSuccess} text="เปิดสาขาที่สีลม และสั่งนำเข้าเนื้อวัวเกรด A+ ล็อตใหญ่" />
-                        <ChoiceButton onClick={onError} text="เปิดสาขาสีลม แต่เน้นเมนูผักสลัดเพื่อสุขภาพ (15%)" />
-                    </div>
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 13: วางแผนยุทธศาสตร์", desc: "จะเปิดสาขาใหม่ แดชบอร์ดรายงานว่า 'คนทำงานย่านสีลมชอบทานเนื้อวัวพรีเมียม (85%)' ควรเลือกทำเลและวัตถุดิบอย่างไร?" }),
+                e('div', { class: 'space-y-3' },
+                    e(ChoiceButton, { onClick: onError, text: "เปิดย่านสยามสแควร์ (วัยรุ่น) และเน้นเมนูหมูกระทะ" }),
+                    e(ChoiceButton, { onClick: onSuccess, text: "เปิดสาขาที่สีลม และสั่งนำเข้าเนื้อวัวเกรด A+ ล็อตใหญ่" }),
+                    e(ChoiceButton, { onClick: onError, text: "เปิดสาขาสีลม แต่เน้นเมนูผักสลัดเพื่อสุขภาพ (15%)" })
+                )
             );
         }
 
         function Mission14({ onSuccess, onError }) {
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 14: ตรวจสอบรายงาน (Data Validation)" desc="พนักงานรายงานว่า 'ความพึงพอใจลูกค้า (ดีมาก=3, ปานกลาง=2, แย่=1) เฉลี่ยได้ 2.45' คุณควรสอนพนักงานว่าอย่างไร?" />
-                    <div class="space-y-3">
-                        <ChoiceButton onClick={onError} text="'เยี่ยมมาก ตัวเลขชัดเจนดี ทำรายงานแบบนี้ต่อไป'" />
-                        <ChoiceButton onClick={onError} text="'ไปคำนวณใหม่ น่าจะบวกเลขผิดแน่ๆ'" />
-                        <ChoiceButton onClick={onSuccess} text="'ความพึงพอใจเป็นข้อมูลเชิงคุณภาพแบบจัดอันดับ ไม่ควรหาค่าเฉลี่ย ควรรายงานเป็นร้อยละแทน'" />
-                    </div>
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 14: ตรวจสอบรายงาน (Data Validation)", desc: "พนักงานรายงานว่า 'ความพึงพอใจลูกค้า (ดีมาก=3, ปานกลาง=2, แย่=1) เฉลี่ยได้ 2.45' คุณควรสอนพนักงานว่าอย่างไร?" }),
+                e('div', { class: 'space-y-3' },
+                    e(ChoiceButton, { onClick: onError, text: "'เยี่ยมมาก ตัวเลขชัดเจนดี ทำรายงานแบบนี้ต่อไป'" }),
+                    e(ChoiceButton, { onClick: onError, text: "'ไปคำนวณใหม่ น่าจะบวกเลขผิดแน่ๆ'" }),
+                    e(ChoiceButton, { onClick: onSuccess, text: "'ความพึงพอใจเป็นข้อมูลเชิงคุณภาพแบบจัดอันดับ ไม่ควรหาค่าเฉลี่ย ควรรายงานเป็นร้อยละแทน'" })
+                )
             );
         }
 
-        // Mission 15
         function Mission15({ onSuccess, onError }) {
-            return (
-                <div class="space-y-4">
-                    <MissionHeader title="ภารกิจที่ 15: สรุปสารสนเทศเพื่อโฆษณา" desc="ภารกิจสุดท้าย! ลูกค้า 80% โหวตให้ 'ซุปทรัฟเฟิล' เป็นเมนูโปรดอันดับ 1 คุณจะเลือกสโลแกนโฆษณาใดที่ดึงดูดและซื่อสัตย์ต่อข้อมูลที่สุด?" />
-                    <div class="space-y-3">
-                        <ChoiceButton onClick={onSuccess} text="🎉 'ซุปทรัฟเฟิล เมนูยอดฮิตที่ลูกค้ากว่า 80% หลงรัก!'" />
-                        <ChoiceButton onClick={onError} text="❌ 'ซุปทรัฟเฟิลที่อร่อยที่สุดในโลก ทุกคนที่ชิมต้องร้องว้าว!'" />
-                        <ChoiceButton onClick={onError} text="🤔 'คนไทย 100% เลิกกินเมนูอื่นเพื่อมากินซุปทรัฟเฟิลของเรา!'" />
-                    </div>
-                </div>
+            return e('div', { class: 'space-y-4' },
+                e(MissionHeader, { title: "ภารกิจที่ 15: สรุปสารสนเทศเพื่อโฆษณา", desc: "ภารกิจสุดท้าย! ลูกค้า 80% โหวตให้ 'ซุปทรัฟเฟิล' เป็นเมนูโปรดอันดับ 1 คุณจะเลือกสโลแกนโฆษณาใดที่ดึงดูดและซื่อสัตย์ต่อข้อมูลที่สุด?" }),
+                e('div', { class: 'space-y-3' },
+                    e(ChoiceButton, { onClick: onSuccess, text: "🎉 'ซุปทรัฟเฟิล เมนูยอดฮิตที่ลูกค้ากว่า 80% หลงรัก!'" }),
+                    e(ChoiceButton, { onClick: onError, text: "❌ 'ซุปทรัฟเฟิลที่อร่อยที่สุดในโลก ทุกคนที่ชิมต้องร้องว้าว!'" }),
+                    e(ChoiceButton, { onClick: onError, text: "🤔 'คนไทย 100% เลิกกินเมนูอื่นเพื่อมากินซุปทรัฟเฟิลของเรา!'" })
+                )
             );
         }
 
-        // Render to DOM
+        // สั่งให้ React เรนเดอร์ลงใน DOM โดยไม่ต้องผ่านตัวแปลงภาษาแบบ In-browser Babel
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(e(App));
     </script>
 </body>
 </html>
